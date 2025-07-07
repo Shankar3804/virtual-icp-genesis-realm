@@ -43,7 +43,7 @@ export const useICP = () => {
     }
   };
 
-  const login = async () => {
+  const login = async (): Promise<boolean> => {
     setLoading(true);
     try {
       console.log('Attempting to login...');
@@ -58,7 +58,9 @@ export const useICP = () => {
           title: "Welcome to ICP VR Genesis!",
           description: "Successfully logged in with Internet Identity",
         });
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Login failed:', error);
       toast({
@@ -66,6 +68,7 @@ export const useICP = () => {
         description: "Unable to authenticate with Internet Identity",
         variant: "destructive",
       });
+      return false;
     } finally {
       setLoading(false);
     }
