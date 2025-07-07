@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Box, Sphere, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -28,7 +28,9 @@ const FloatingCube = ({ position }: { position: [number, number, number] }) => {
       args={[1, 1, 1]}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
-      onClick={() => console.log('Cube clicked!')}
+      onClick={() => {
+        console.log('Cube clicked!');
+      }}
     >
       <meshStandardMaterial 
         color={hovered ? '#00ffff' : '#8b5cf6'} 
@@ -79,7 +81,6 @@ const VREnvironment = ({ userCount, onInteraction }: VRSceneProps) => {
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/inter-bold.woff"
       >
         ICP VR Genesis Realm
       </Text>
@@ -118,17 +119,26 @@ const VREnvironment = ({ userCount, onInteraction }: VRSceneProps) => {
 
 const VRScene: React.FC<VRSceneProps> = ({ userCount, onInteraction }) => {
   return (
-    <div className="w-full h-full">
-      <Canvas
-        camera={{ position: [0, 5, 8], fov: 60 }}
-        gl={{ 
-          antialias: true, 
-          alpha: true,
-          powerPreference: "high-performance"
-        }}
-      >
-        <VREnvironment userCount={userCount} onInteraction={onInteraction} />
-      </Canvas>
+    <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-800">
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Loading VR Scene...</p>
+          </div>
+        </div>
+      }>
+        <Canvas
+          camera={{ position: [0, 5, 8], fov: 60 }}
+          gl={{ 
+            antialias: true, 
+            alpha: true,
+            powerPreference: "high-performance"
+          }}
+        >
+          <VREnvironment userCount={userCount} onInteraction={onInteraction} />
+        </Canvas>
+      </Suspense>
     </div>
   );
 };

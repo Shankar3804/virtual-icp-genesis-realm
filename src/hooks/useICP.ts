@@ -19,12 +19,15 @@ export const useICP = () => {
 
   const initAuth = async () => {
     try {
+      console.log('Initializing ICP authentication...');
       await icpService.init();
       const authenticated = await icpService.isAuthenticated();
+      console.log('Authentication status:', authenticated);
       setIsAuthenticated(authenticated);
       
       if (authenticated) {
         const userPrincipal = await icpService.getPrincipal();
+        console.log('User principal:', userPrincipal?.toString());
         setPrincipal(userPrincipal);
         await loadUserData();
       }
@@ -43,7 +46,9 @@ export const useICP = () => {
   const login = async () => {
     setLoading(true);
     try {
+      console.log('Attempting to login...');
       const success = await icpService.login();
+      console.log('Login success:', success);
       if (success) {
         setIsAuthenticated(true);
         const userPrincipal = await icpService.getPrincipal();
@@ -84,10 +89,14 @@ export const useICP = () => {
 
   const loadUserData = async () => {
     try {
+      console.log('Loading user data...');
       const [userAvatar, userTickets] = await Promise.all([
         icpService.getAvatar(),
         icpService.getTickets(),
       ]);
+      
+      console.log('User avatar:', userAvatar);
+      console.log('User tickets:', userTickets);
       
       setAvatar(userAvatar[0] || null);
       setTickets(userTickets);
@@ -98,7 +107,9 @@ export const useICP = () => {
 
   const createAvatar = async (name: string, color: string, accessory: string) => {
     try {
+      console.log('Creating avatar:', { name, color, accessory });
       const result = await icpService.createAvatar(name, color, accessory);
+      console.log('Avatar creation result:', result);
       if (result[0]) {
         setAvatar(result[0]);
         toast({
@@ -120,7 +131,9 @@ export const useICP = () => {
 
   const mintTicket = async (eventName: string, eventDate: bigint, ticketType: string, price: bigint) => {
     try {
+      console.log('Minting ticket:', { eventName, eventDate, ticketType, price });
       const result = await icpService.mintTicket(eventName, eventDate, ticketType, price);
+      console.log('Ticket minting result:', result);
       if (result[0]) {
         setTickets(prev => [...prev, result[0]]);
         toast({
