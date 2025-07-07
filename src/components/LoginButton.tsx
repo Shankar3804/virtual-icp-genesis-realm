@@ -1,10 +1,19 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { useICP } from '../hooks/useICP';
 
 const LoginButton: React.FC = () => {
   const { isAuthenticated, loading, login, logout, principal } = useICP();
+  const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    const success = await login();
+    if (success) {
+      navigate('/dashboard');
+    }
+  };
 
   if (loading) {
     return (
@@ -29,7 +38,7 @@ const LoginButton: React.FC = () => {
 
   return (
     <Button 
-      onClick={login}
+      onClick={handleLogin}
       className="cyber-glow pulse-neon bg-primary hover:bg-primary/80 text-primary-foreground font-semibold"
     >
       Connect with Internet Identity
