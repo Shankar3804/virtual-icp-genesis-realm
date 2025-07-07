@@ -4,6 +4,7 @@ export interface User {
   principal: string;
   avatar?: Avatar;
   tickets: Ticket[];
+  vrWorlds: VRWorld[];
   createdAt: bigint;
 }
 
@@ -20,9 +21,18 @@ export interface Ticket {
   eventName: string;
   eventDate: bigint;
   ticketType: string;
-  price: bigint;
   owner: string;
   isUsed: boolean;
+}
+
+export interface VRWorld {
+  id: string;
+  name: string;
+  description: string;
+  creator: string;
+  createdAt: bigint;
+  isActive: boolean;
+  participants: string[];
 }
 
 export interface VRPosition {

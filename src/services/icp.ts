@@ -1,4 +1,3 @@
-
 import { AuthClient } from '@dfinity/auth-client';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
@@ -112,16 +111,29 @@ export class ICPService {
           eventName: IDL.Text,
           eventDate: IDL.Nat64,
           ticketType: IDL.Text,
-          price: IDL.Nat64,
           owner: IDL.Text,
           isUsed: IDL.Bool,
+        });
+
+        const VRWorld = IDL.Record({
+          id: IDL.Text,
+          name: IDL.Text,
+          description: IDL.Text,
+          creator: IDL.Text,
+          createdAt: IDL.Nat64,
+          isActive: IDL.Bool,
+          participants: IDL.Vec(IDL.Text),
         });
 
         return IDL.Service({
           createAvatar: IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Opt(Avatar)], []),
           getAvatar: IDL.Func([], [IDL.Opt(Avatar)], ['query']),
-          mintTicket: IDL.Func([IDL.Text, IDL.Nat64, IDL.Text, IDL.Nat64], [IDL.Opt(Ticket)], []),
+          mintTicket: IDL.Func([IDL.Text, IDL.Nat64, IDL.Text], [IDL.Opt(Ticket)], []),
           getTickets: IDL.Func([], [IDL.Vec(Ticket)], ['query']),
+          createVRWorld: IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(VRWorld)], []),
+          getAllVRWorlds: IDL.Func([], [IDL.Vec(VRWorld)], ['query']),
+          joinVRWorld: IDL.Func([IDL.Text], [IDL.Bool], []),
+          getUserVRWorlds: IDL.Func([], [IDL.Vec(VRWorld)], ['query']),
           whoami: IDL.Func([], [IDL.Principal], ['query']),
         });
       };
@@ -164,10 +176,10 @@ export class ICPService {
   }
 
   // Ticket methods
-  async mintTicket(eventName: string, eventDate: bigint, ticketType: string, price: bigint) {
+  async mintTicket(eventName: string, eventDate: bigint, ticketType: string) {
     if (!this.actor) throw new Error('Not authenticated');
     try {
-      return await this.actor.mintTicket(eventName, eventDate, ticketType, price);
+      return await this.actor.mintTicket(eventName, eventDate, ticketType);
     } catch (error) {
       console.error('Mint ticket failed:', error);
       // Return mock data for development
@@ -176,7 +188,6 @@ export class ICPService {
         eventName,
         eventDate,
         ticketType,
-        price,
         owner: 'mock-principal',
         isUsed: false
       }];
@@ -189,6 +200,56 @@ export class ICPService {
       return await this.actor.getTickets();
     } catch (error) {
       console.error('Get tickets failed:', error);
+      return [];
+    }
+  }
+
+  // VR World methods
+  async createVRWorld(name: string, description: string) {
+    if (!this.actor) throw new Error('Not authenticated');
+    try {
+      return await this.actor.createVRWorld(name, description);
+    } catch (error) {
+      console.error('Create VR world failed:', error);
+      // Return mock data for development
+      return [{
+        id: Math.random().toString(36).substr(2, 9),
+        name,
+        description,
+        creator: 'mock-principal',
+        createdAt: BigInt(Date.now()),
+        isActive: true,
+        participants: ['mock-principal']
+      }];
+    }
+  }
+
+  async getAllVRWorlds() {
+    if (!this.actor) throw new Error('Not authenticated');
+    try {
+      return await this.actor.getAllVRWorlds();
+    } catch (error) {
+      console.error('Get all VR worlds failed:', error);
+      return [];
+    }
+  }
+
+  async joinVRWorld(worldId: string) {
+    if (!this.actor) throw new Error('Not authenticated');
+    try {
+      return await this.actor.joinVRWorld(worldId);
+    } catch (error) {
+      console.error('Join VR world failed:', error);
+      return false;
+    }
+  }
+
+  async getUserVRWorlds() {
+    if (!this.actor) throw new Error('Not authenticated');
+    try {
+      return await this.actor.getUserVRWorlds();
+    } catch (error) {
+      console.error('Get user VR worlds failed:', error);
       return [];
     }
   }

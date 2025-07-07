@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import LoginButton from '../components/LoginButton';
 import AvatarCreator from '../components/AvatarCreator';
 import TicketMinter from '../components/TicketMinter';
+import VRWorldCreator from '../components/VRWorldCreator';
 import VRScene from '../components/VRScene';
 import { useICP } from '../hooks/useICP';
 
@@ -160,7 +161,7 @@ const VRDashboard = () => {
             </div>
 
             {/* Feature Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               <Card className="holographic">
                 <CardHeader>
                   <CardTitle className="text-primary neon-text">Avatar & Identity</CardTitle>
@@ -178,6 +179,15 @@ const VRDashboard = () => {
                   <TicketMinter />
                 </CardContent>
               </Card>
+
+              <Card className="holographic">
+                <CardHeader>
+                  <CardTitle className="text-primary neon-text">VR Worlds</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <VRWorldCreator />
+                </CardContent>
+              </Card>
             </div>
 
             {/* Instructions */}
@@ -192,13 +202,13 @@ const VRDashboard = () => {
                     <ul className="space-y-1 text-xs">
                       <li>• Generate new virtual environment</li>
                       <li>• Customize world settings</li>
-                      <li>• Invite friends to join</li>
+                      <li>• Share with friends</li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-foreground mb-2">Enter VR World:</h4>
+                    <h4 className="font-semibold text-foreground mb-2">Join VR World:</h4>
                     <ul className="space-y-1 text-xs">
-                      <li>• Join existing worlds</li>
+                      <li>• Browse available worlds</li>
                       <li>• Interact with other users</li>
                       <li>• Explore shared experiences</li>
                     </ul>

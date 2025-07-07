@@ -24,25 +24,37 @@ actor ICPVRGenesis {
         eventName: Text;
         eventDate: Int;
         ticketType: Text;
-        price: Nat;
         owner: Principal;
         isUsed: Bool;
+    };
+
+    public type VRWorld = {
+        id: Text;
+        name: Text;
+        description: Text;
+        creator: Principal;
+        createdAt: Int;
+        isActive: Bool;
+        participants: [Principal];
     };
 
     public type User = {
         id: Principal;
         avatar: ?Avatar;
         tickets: [Ticket];
+        vrWorlds: [VRWorld];
         createdAt: Int;
     };
 
     // State
     private stable var nextTicketId: Nat = 0;
     private stable var nextAvatarId: Nat = 0;
+    private stable var nextVRWorldId: Nat = 0;
     
     private var users = HashMap.HashMap<Principal, User>(10, Principal.equal, Principal.hash);
     private var avatars = HashMap.HashMap<Principal, Avatar>(10, Principal.equal, Principal.hash);
     private var tickets = HashMap.HashMap<Text, Ticket>(10, Text.equal, Text.hash);
+    private var vrWorlds = HashMap.HashMap<Text, VRWorld>(10, Text.equal, Text.hash);
 
     // Helper functions
     private func generateTicketId(): Text {
@@ -53,6 +65,11 @@ actor ICPVRGenesis {
     private func generateAvatarId(): Text {
         nextAvatarId += 1;
         "avatar_" # Nat.toText(nextAvatarId)
+    };
+
+    private func generateVRWorldId(): Text {
+        nextVRWorldId += 1;
+        "vr_world_" # Nat.toText(nextVRWorldId)
     };
 
     // Avatar functions
@@ -87,8 +104,7 @@ actor ICPVRGenesis {
     public shared(msg) func mintTicket(
         eventName: Text, 
         eventDate: Int, 
-        ticketType: Text, 
-        price: Nat
+        ticketType: Text
     ): async ?Ticket {
         let caller = msg.caller;
         let ticketId = generateTicketId();
@@ -98,7 +114,6 @@ actor ICPVRGenesis {
             eventName = eventName;
             eventDate = eventDate;
             ticketType = ticketType;
-            price = price;
             owner = caller;
             isUsed = false;
         };
@@ -116,14 +131,71 @@ actor ICPVRGenesis {
         userTickets
     };
 
-    public shared query(msg) func getTicket(ticketId: Text): async ?Ticket {
+    // VR World functions
+    public shared(msg) func createVRWorld(
+        name: Text,
+        description: Text
+    ): async ?VRWorld {
         let caller = msg.caller;
-        switch (tickets.get(ticketId)) {
-            case (?ticket) {
-                if (ticket.owner == caller) { ?ticket } else { null }
+        let worldId = generateVRWorldId();
+        
+        let vrWorld: VRWorld = {
+            id = worldId;
+            name = name;
+            description = description;
+            creator = caller;
+            createdAt = Time.now();
+            isActive = true;
+            participants = [caller];
+        };
+        
+        vrWorlds.put(worldId, vrWorld);
+        Debug.print("VR World created: " # worldId # " by user: " # Principal.toText(caller));
+        ?vrWorld
+    };
+
+    public shared query func getAllVRWorlds(): async [VRWorld] {
+        let activeWorlds = vrWorlds.vals()
+            |> Iter.filter(_, func(world: VRWorld): Bool { world.isActive })
+            |> Iter.toArray(_);
+        activeWorlds
+    };
+
+    public shared(msg) func joinVRWorld(worldId: Text): async Bool {
+        let caller = msg.caller;
+        switch (vrWorlds.get(worldId)) {
+            case (?world) {
+                // Check if user is already a participant
+                let isParticipant = Array.find<Principal>(world.participants, func(p: Principal): Bool { p == caller });
+                switch (isParticipant) {
+                    case (?_) { true }; // Already joined
+                    case null {
+                        let updatedParticipants = Array.append<Principal>(world.participants, [caller]);
+                        let updatedWorld: VRWorld = {
+                            id = world.id;
+                            name = world.name;
+                            description = world.description;
+                            creator = world.creator;
+                            createdAt = world.createdAt;
+                            isActive = world.isActive;
+                            participants = updatedParticipants;
+                        };
+                        vrWorlds.put(worldId, updatedWorld);
+                        Debug.print("User " # Principal.toText(caller) # " joined VR World: " # worldId);
+                        true
+                    };
+                }
             };
-            case null { null };
+            case null { false };
         }
+    };
+
+    public shared query(msg) func getUserVRWorlds(): async [VRWorld] {
+        let caller = msg.caller;
+        let userWorlds = vrWorlds.vals()
+            |> Iter.filter(_, func(world: VRWorld): Bool { world.creator == caller })
+            |> Iter.toArray(_);
+        userWorlds
     };
 
     // User management
@@ -137,11 +209,15 @@ actor ICPVRGenesis {
         let userTickets = tickets.vals()
             |> Iter.filter(_, func(ticket: Ticket): Bool { ticket.owner == caller })
             |> Iter.toArray(_);
+        let userVRWorlds = vrWorlds.vals()
+            |> Iter.filter(_, func(world: VRWorld): Bool { world.creator == caller })
+            |> Iter.toArray(_);
         
         ?{
             id = caller;
             avatar = avatar;
             tickets = userTickets;
+            vrWorlds = userVRWorlds;
             createdAt = Time.now();
         }
     };
@@ -153,6 +229,10 @@ actor ICPVRGenesis {
 
     public query func getTotalAvatars(): async Nat {
         avatars.size()
+    };
+
+    public query func getTotalVRWorlds(): async Nat {
+        vrWorlds.size()
     };
 
     // System functions for upgrades
