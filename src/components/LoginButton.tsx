@@ -17,18 +17,13 @@ const LoginButton: React.FC = () => {
 
   if (isAuthenticated) {
     return (
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-muted-foreground">
-          Connected: {principal?.toString().slice(0, 8)}...
-        </div>
-        <Button 
-          onClick={logout}
-          variant="outline"
-          className="holographic hover:bg-destructive/20"
-        >
-          Logout
-        </Button>
-      </div>
+      <Button 
+        onClick={logout}
+        variant="outline"
+        className="holographic hover:bg-destructive/20"
+      >
+        Logout ({principal?.toString().slice(0, 8)}...)
+      </Button>
     );
   }
 
