@@ -3,8 +3,8 @@ import { Actor, HttpAgent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 
 // This will be replaced with actual canister IDs after deployment
-const BACKEND_CANISTER_ID = process.env.VITE_BACKEND_CANISTER_ID || 'rrkah-fqaaa-aaaaa-aaaaq-cai';
-const II_URL = process.env.NODE_ENV === 'production' 
+const BACKEND_CANISTER_ID = import.meta.env.VITE_BACKEND_CANISTER_ID || 'rrkah-fqaaa-aaaaa-aaaaq-cai';
+const II_URL = import.meta.env.NODE_ENV === 'production' 
   ? 'https://identity.ic0.app'
   : `http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai`;
 
@@ -87,10 +87,10 @@ export class ICPService {
       
       this.agent = new HttpAgent({
         identity,
-        host: process.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:4943',
+        host: import.meta.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:4943',
       });
 
-      if (process.env.NODE_ENV !== 'production') {
+      if (import.meta.env.NODE_ENV !== 'production') {
         await this.agent.fetchRootKey().catch(err => {
           console.warn('Failed to fetch root key:', err);
         });
