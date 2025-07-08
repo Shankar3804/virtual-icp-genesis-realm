@@ -12,6 +12,7 @@ const VRDashboard = () => {
   const [userCount] = useState(Math.floor(Math.random() * 50) + 10);
   const [showVR, setShowVR] = useState(false);
   const [showWorldSelection, setShowWorldSelection] = useState(false);
+  const [currentWorldId, setCurrentWorldId] = useState<string | null>(null);
   const { isAuthenticated, loading, allVRWorlds, joinVRWorld } = useICP();
 
   const handleVRInteraction = () => {
@@ -22,25 +23,32 @@ const VRDashboard = () => {
     console.log('Creating new VR world...');
     setShowVR(true);
     setShowWorldSelection(false);
+    setCurrentWorldId(null);
   };
 
   const handleEnterVR = () => {
     console.log('Showing existing VR worlds...');
     setShowWorldSelection(true);
     setShowVR(false);
+    setCurrentWorldId(null);
   };
 
   const handleJoinWorld = async (worldId: string) => {
+    console.log('Attempting to join world:', worldId);
     const success = await joinVRWorld(worldId);
+    console.log('Join world success:', success);
     if (success) {
+      setCurrentWorldId(worldId);
       setShowVR(true);
       setShowWorldSelection(false);
+      console.log('Successfully joined and entering VR world:', worldId);
     }
   };
 
   const handleExitVR = () => {
     setShowVR(false);
     setShowWorldSelection(false);
+    setCurrentWorldId(null);
   };
 
   if (loading) {
@@ -124,6 +132,11 @@ const VRDashboard = () => {
               <CardHeader>
                 <CardTitle className="text-primary neon-text flex items-center justify-between">
                   Virtual Reality Experience
+                  {currentWorldId && (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      World: {allVRWorlds.find(w => w.id === currentWorldId)?.name || 'Unknown'}
+                    </span>
+                  )}
                   <span className="text-sm font-normal text-muted-foreground">
                     {userCount} users online
                   </span>
