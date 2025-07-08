@@ -1,0 +1,50 @@
+type Avatar = record {
+  id : text;
+  name : text;
+  color : text;
+  accessory : text;
+  owner : principal;
+};
+
+type Ticket = record {
+  id : text;
+  event_name : text;
+  event_date : nat64;
+  ticket_type : text;
+  owner : principal;
+  is_used : bool;
+};
+
+type VRWorld = record {
+  id : text;
+  name : text;
+  description : text;
+  creator : principal;
+  created_at : nat64;
+  is_active : bool;
+  participants : vec principal;
+};
+
+type User = record {
+  id : principal;
+  avatar : opt Avatar;
+  tickets : vec Ticket;
+  vr_worlds : vec VRWorld;
+  created_at : nat64;
+};
+
+service : {
+  create_avatar : (text, text, text) -> (opt Avatar);
+  get_avatar : () -> (opt Avatar) query;
+  mint_ticket : (text, nat64, text) -> (opt Ticket);
+  get_tickets : () -> (vec Ticket) query;
+  create_vr_world : (text, text) -> (opt VRWorld);
+  get_all_vr_worlds : () -> (vec VRWorld) query;
+  join_vr_world : (text) -> (bool);
+  get_user_vr_worlds : () -> (vec VRWorld) query;
+  whoami : () -> (principal) query;
+  get_user : () -> (opt User) query;
+  get_total_tickets : () -> (nat64) query;
+  get_total_avatars : () -> (nat64) query;
+  get_total_vr_worlds : () -> (nat64) query;
+}

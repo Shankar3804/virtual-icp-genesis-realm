@@ -3,8 +3,9 @@
   "version": 1,
   "canisters": {
     "icp_vr_genesis_backend": {
-      "type": "motoko",
-      "main": "backend/main.mo"
+      "type": "rust",
+      "package": "icp_vr_genesis_backend",
+      "candid": "backend/icp_vr_genesis_backend.did"
     },
     "icp_vr_genesis_frontend": {
       "type": "assets",
