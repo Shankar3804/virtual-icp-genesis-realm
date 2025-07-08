@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Principal } from '@dfinity/principal';
 import { icpService } from '../services/icp';
@@ -172,13 +171,14 @@ export const useICP = () => {
       const result = await icpService.createVRWorld(name, description);
       console.log('VR world creation result:', result);
       if (result[0]) {
-        setVRWorlds(prev => [...prev, result[0]]);
-        await loadAllVRWorlds(); // Refresh all worlds list
+        const newWorld = result[0];
+        setVRWorlds(prev => [...prev, newWorld]);
+        setAllVRWorlds(prev => [...prev, newWorld]); // Add to both arrays
         toast({
           title: "VR World Created!",
           description: `Successfully created ${name}`,
         });
-        return result[0];
+        return newWorld;
       }
     } catch (error) {
       console.error('VR world creation failed:', error);
@@ -218,6 +218,7 @@ export const useICP = () => {
   const loadAllVRWorlds = async () => {
     try {
       const allWorlds = await icpService.getAllVRWorlds();
+      console.log('Loaded all VR worlds:', allWorlds);
       setAllVRWorlds(allWorlds);
     } catch (error) {
       console.error('Failed to load all VR worlds:', error);

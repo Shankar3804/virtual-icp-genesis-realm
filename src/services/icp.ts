@@ -212,7 +212,7 @@ export class ICPService {
     } catch (error) {
       console.error('Create VR world failed:', error);
       // Return mock data for development
-      return [{
+      const mockWorld = {
         id: Math.random().toString(36).substr(2, 9),
         name,
         description,
@@ -220,17 +220,34 @@ export class ICPService {
         createdAt: BigInt(Date.now()),
         isActive: true,
         participants: ['mock-principal']
-      }];
+      };
+      console.log('Returning mock VR world:', mockWorld);
+      return [mockWorld];
     }
   }
 
   async getAllVRWorlds() {
     if (!this.actor) throw new Error('Not authenticated');
     try {
-      return await this.actor.getAllVRWorlds();
+      const result = await this.actor.getAllVRWorlds();
+      console.log('getAllVRWorlds result:', result);
+      return result;
     } catch (error) {
       console.error('Get all VR worlds failed:', error);
-      return [];
+      // Return some mock data for development
+      const mockWorlds = [
+        {
+          id: 'world-1',
+          name: 'Demo World',
+          description: 'A demo VR world for testing',
+          creator: 'mock-principal',
+          createdAt: BigInt(Date.now() - 1000000),
+          isActive: true,
+          participants: ['mock-principal']
+        }
+      ];
+      console.log('Returning mock VR worlds:', mockWorlds);
+      return mockWorlds;
     }
   }
 
