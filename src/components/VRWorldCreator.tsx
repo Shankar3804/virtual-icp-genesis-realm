@@ -13,18 +13,22 @@ const VRWorldCreator: React.FC = () => {
   const [worldDescription, setWorldDescription] = useState('');
   const [creating, setCreating] = useState(false);
   
-  const { createVRWorld, vrWorlds, allVRWorlds, joinVRWorld } = useICP();
+  const { createVRWorld, vrWorlds, allVRWorlds, joinVRWorld, loadAllVRWorlds } = useICP();
 
   const handleCreateWorld = async () => {
     if (!worldName.trim() || !worldDescription.trim()) return;
     
     setCreating(true);
-    await createVRWorld(worldName, worldDescription);
+    const newWorld = await createVRWorld(worldName, worldDescription);
     setCreating(false);
     
-    // Clear form
-    setWorldName('');
-    setWorldDescription('');
+    if (newWorld) {
+      // Clear form only on success
+      setWorldName('');
+      setWorldDescription('');
+      // Refresh the list to show the new world
+      await loadAllVRWorlds();
+    }
   };
 
   const handleJoinWorld = async (worldId: string) => {

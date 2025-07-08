@@ -208,7 +208,9 @@ export class ICPService {
   async createVRWorld(name: string, description: string) {
     if (!this.actor) throw new Error('Not authenticated');
     try {
-      return await this.actor.createVRWorld(name, description);
+      const result = await this.actor.createVRWorld(name, description);
+      console.log('Backend createVRWorld result:', result);
+      return result;
     } catch (error) {
       console.error('Create VR world failed:', error);
       // Return mock data for development

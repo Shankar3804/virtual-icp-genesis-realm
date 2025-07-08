@@ -173,7 +173,8 @@ export const useICP = () => {
       if (result[0]) {
         const newWorld = result[0];
         setVRWorlds(prev => [...prev, newWorld]);
-        setAllVRWorlds(prev => [...prev, newWorld]); // Add to both arrays
+        // Refresh all VR worlds to ensure the new world appears in the list
+        await loadAllVRWorlds();
         toast({
           title: "VR World Created!",
           description: `Successfully created ${name}`,

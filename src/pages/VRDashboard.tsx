@@ -13,21 +13,25 @@ const VRDashboard = () => {
   const [showVR, setShowVR] = useState(false);
   const [showWorldSelection, setShowWorldSelection] = useState(false);
   const [currentWorldId, setCurrentWorldId] = useState<string | null>(null);
-  const { isAuthenticated, loading, allVRWorlds, joinVRWorld } = useICP();
+  const { isAuthenticated, loading, allVRWorlds, joinVRWorld, loadAllVRWorlds } = useICP();
 
   const handleVRInteraction = () => {
     console.log('VR Interaction detected!');
   };
 
-  const handleCreateVR = () => {
+  const handleCreateVR = async () => {
     console.log('Creating new VR world...');
+    // Refresh the VR worlds list before showing the creation interface
+    await loadAllVRWorlds();
     setShowVR(true);
     setShowWorldSelection(false);
     setCurrentWorldId(null);
   };
 
-  const handleEnterVR = () => {
+  const handleEnterVR = async () => {
     console.log('Showing existing VR worlds...');
+    // Refresh the VR worlds list before showing the selection
+    await loadAllVRWorlds();
     setShowWorldSelection(true);
     setShowVR(false);
     setCurrentWorldId(null);
