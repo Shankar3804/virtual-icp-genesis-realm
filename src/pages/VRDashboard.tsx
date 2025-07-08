@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,8 @@ import { useICP } from '../hooks/useICP';
 const VRDashboard = () => {
   const [userCount] = useState(Math.floor(Math.random() * 50) + 10);
   const [showVR, setShowVR] = useState(false);
-  const { isAuthenticated, loading } = useICP();
+  const [showWorldSelection, setShowWorldSelection] = useState(false);
+  const { isAuthenticated, loading, allVRWorlds, joinVRWorld } = useICP();
 
   const handleVRInteraction = () => {
     console.log('VR Interaction detected!');
@@ -21,15 +21,26 @@ const VRDashboard = () => {
   const handleCreateVR = () => {
     console.log('Creating new VR world...');
     setShowVR(true);
+    setShowWorldSelection(false);
   };
 
   const handleEnterVR = () => {
-    console.log('Entering existing VR world...');
-    setShowVR(true);
+    console.log('Showing existing VR worlds...');
+    setShowWorldSelection(true);
+    setShowVR(false);
+  };
+
+  const handleJoinWorld = async (worldId: string) => {
+    const success = await joinVRWorld(worldId);
+    if (success) {
+      setShowVR(true);
+      setShowWorldSelection(false);
+    }
   };
 
   const handleExitVR = () => {
     setShowVR(false);
+    setShowWorldSelection(false);
   };
 
   if (loading) {
@@ -96,9 +107,9 @@ const VRDashboard = () => {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            {showVR && (
+            {(showVR || showWorldSelection) && (
               <Button onClick={handleExitVR} variant="outline" className="holographic">
-                Exit VR
+                Back to Dashboard
               </Button>
             )}
             <LoginButton />
@@ -131,6 +142,65 @@ const VRDashboard = () => {
                 </Suspense>
               </CardContent>
             </Card>
+          </div>
+        ) : showWorldSelection ? (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent neon-text mb-4">
+                Select VR World to Join
+              </h2>
+            </div>
+            
+            {allVRWorlds.length > 0 ? (
+              <Card className="holographic max-w-4xl mx-auto">
+                <CardHeader>
+                  <CardTitle className="text-secondary neon-text">Available VR Worlds</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {allVRWorlds.map((world) => (
+                      <div 
+                        key={world.id}
+                        className="p-6 rounded-lg border border-border bg-card/50 hover:bg-card/70 transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-3 flex-1">
+                            <h4 className="text-xl font-semibold text-foreground">{world.name}</h4>
+                            <p className="text-sm text-muted-foreground">{world.description}</p>
+                            <div className="flex justify-between items-center text-sm text-muted-foreground">
+                              <span>Participants: {world.participants.length}</span>
+                              <span>Created: {new Date(Number(world.createdAt)).toLocaleDateString()}</span>
+                              <span className={`${world.isActive ? 'text-primary' : 'text-destructive'}`}>
+                                {world.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleJoinWorld(world.id)}
+                            className="ml-6 bg-secondary hover:bg-secondary/80"
+                          >
+                            Join World
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="holographic max-w-2xl mx-auto">
+                <CardContent className="text-center py-12">
+                  <p className="text-muted-foreground text-lg">No VR worlds available yet.</p>
+                  <p className="text-muted-foreground text-sm mt-2">Create the first one to get started!</p>
+                  <Button 
+                    onClick={handleCreateVR}
+                    className="mt-4 cyber-glow bg-primary hover:bg-primary/80"
+                  >
+                    Create VR World
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : (
           <div className="space-y-8">
