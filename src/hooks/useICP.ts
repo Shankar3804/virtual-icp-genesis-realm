@@ -197,12 +197,22 @@ export const useICP = () => {
       const success = await icpService.joinVRWorld(worldId);
       console.log('Join VR world result:', success);
       if (success) {
-        await loadAllVRWorlds(); // Refresh all worlds list
+        // Refresh all VR worlds to get updated participant lists
+        await loadAllVRWorlds();
+        // Also refresh user's VR worlds in case they now have access
+        await loadUserData();
         toast({
           title: "Joined VR World!",
           description: "Successfully joined the VR world",
         });
         return true;
+      } else {
+        toast({
+          title: "Join Failed",
+          description: "Unable to join the VR world",
+          variant: "destructive",
+        });
+        return false;
       }
     } catch (error) {
       console.error('Join VR world failed:', error);
@@ -211,8 +221,8 @@ export const useICP = () => {
         description: "Unable to join the VR world",
         variant: "destructive",
       });
+      return false;
     }
-    return false;
   };
 
   const loadAllVRWorlds = async () => {
