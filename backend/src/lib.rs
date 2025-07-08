@@ -1,12 +1,9 @@
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::api::time;
 use ic_cdk::{caller, query, update};
-use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
-use ic_stable_structures::{DefaultMemoryImpl, StableBTreeMap};
 use serde::Serialize;
 use std::cell::RefCell;
-
-type Memory = VirtualMemory<DefaultMemoryImpl>;
+use std::collections::HashMap;
 
 // Types
 #[derive(CandidType, Deserialize, Serialize, Clone)]
@@ -48,29 +45,11 @@ pub struct User {
     pub created_at: u64,
 }
 
-// State management
+// State management using thread-local storage
 thread_local! {
-    static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> =
-        RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
-
-    static AVATARS: RefCell<StableBTreeMap<Principal, Avatar, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))),
-        )
-    );
-
-    static TICKETS: RefCell<StableBTreeMap<String, Ticket, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))),
-        )
-    );
-
-    static VR_WORLDS: RefCell<StableBTreeMap<String, VRWorld, Memory>> = RefCell::new(
-        StableBTreeMap::init(
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(2))),
-        )
-    );
-
+    static AVATARS: RefCell<HashMap<Principal, Avatar>> = RefCell::new(HashMap::new());
+    static TICKETS: RefCell<HashMap<String, Ticket>> = RefCell::new(HashMap::new());
+    static VR_WORLDS: RefCell<HashMap<String, VRWorld>> = RefCell::new(HashMap::new());
     static NEXT_TICKET_ID: RefCell<u64> = RefCell::new(0);
     static NEXT_AVATAR_ID: RefCell<u64> = RefCell::new(0);
     static NEXT_VR_WORLD_ID: RefCell<u64> = RefCell::new(0);
@@ -106,14 +85,13 @@ fn generate_vr_world_id() -> String {
 fn create_avatar(name: String, color: String, accessory: String) -> Option<Avatar> {
     let caller = caller();
     
-    // Check if user already has an avatar
     AVATARS.with(|avatars| {
-        let avatars_ref = avatars.borrow();
-        if avatars_ref.contains_key(&caller) {
-            return avatars_ref.get(&caller);
-        }
+        let mut avatars_ref = avatars.borrow_mut();
         
-        drop(avatars_ref);
+        // Check if user already has an avatar
+        if let Some(existing_avatar) = avatars_ref.get(&caller) {
+            return Some(existing_avatar.clone());
+        }
         
         let avatar = Avatar {
             id: generate_avatar_id(),
@@ -123,7 +101,7 @@ fn create_avatar(name: String, color: String, accessory: String) -> Option<Avata
             owner: caller,
         };
         
-        avatars.borrow_mut().insert(caller, avatar.clone());
+        avatars_ref.insert(caller, avatar.clone());
         ic_cdk::println!("Avatar created for user: {}", caller.to_text());
         Some(avatar)
     })
@@ -132,7 +110,7 @@ fn create_avatar(name: String, color: String, accessory: String) -> Option<Avata
 #[query]
 fn get_avatar() -> Option<Avatar> {
     let caller = caller();
-    AVATARS.with(|avatars| avatars.borrow().get(&caller))
+    AVATARS.with(|avatars| avatars.borrow().get(&caller).cloned())
 }
 
 // Ticket functions
@@ -163,14 +141,9 @@ fn get_tickets() -> Vec<Ticket> {
     TICKETS.with(|tickets| {
         tickets
             .borrow()
-            .iter()
-            .filter_map(|(_, ticket)| {
-                if ticket.owner == caller {
-                    Some(ticket)
-                } else {
-                    None
-                }
-            })
+            .values()
+            .filter(|ticket| ticket.owner == caller)
+            .cloned()
             .collect()
     })
 }
@@ -203,14 +176,9 @@ fn get_all_vr_worlds() -> Vec<VRWorld> {
     VR_WORLDS.with(|worlds| {
         worlds
             .borrow()
-            .iter()
-            .filter_map(|(_, world)| {
-                if world.is_active {
-                    Some(world)
-                } else {
-                    None
-                }
-            })
+            .values()
+            .filter(|world| world.is_active)
+            .cloned()
             .collect()
     })
 }
@@ -222,7 +190,7 @@ fn join_vr_world(world_id: String) -> bool {
     VR_WORLDS.with(|worlds| {
         let mut worlds_ref = worlds.borrow_mut();
         
-        if let Some(mut world) = worlds_ref.get(&world_id) {
+        if let Some(world) = worlds_ref.get_mut(&world_id) {
             // Check if user is already a participant
             if world.participants.contains(&caller) {
                 return true;
@@ -230,7 +198,6 @@ fn join_vr_world(world_id: String) -> bool {
             
             // Add user to participants
             world.participants.push(caller);
-            worlds_ref.insert(world_id.clone(), world);
             ic_cdk::println!("User {} joined VR World: {}", caller.to_text(), world_id);
             true
         } else {
@@ -245,14 +212,9 @@ fn get_user_vr_worlds() -> Vec<VRWorld> {
     VR_WORLDS.with(|worlds| {
         worlds
             .borrow()
-            .iter()
-            .filter_map(|(_, world)| {
-                if world.creator == caller {
-                    Some(world)
-                } else {
-                    None
-                }
-            })
+            .values()
+            .filter(|world| world.creator == caller)
+            .cloned()
             .collect()
     })
 }
@@ -267,33 +229,23 @@ fn whoami() -> Principal {
 fn get_user() -> Option<User> {
     let caller = caller();
     
-    let avatar = AVATARS.with(|avatars| avatars.borrow().get(&caller));
+    let avatar = AVATARS.with(|avatars| avatars.borrow().get(&caller).cloned());
     
     let user_tickets = TICKETS.with(|tickets| {
         tickets
             .borrow()
-            .iter()
-            .filter_map(|(_, ticket)| {
-                if ticket.owner == caller {
-                    Some(ticket)
-                } else {
-                    None
-                }
-            })
+            .values()
+            .filter(|ticket| ticket.owner == caller)
+            .cloned()
             .collect()
     });
     
     let user_vr_worlds = VR_WORLDS.with(|worlds| {
         worlds
             .borrow()
-            .iter()
-            .filter_map(|(_, world)| {
-                if world.creator == caller {
-                    Some(world)
-                } else {
-                    None
-                }
-            })
+            .values()
+            .filter(|world| world.creator == caller)
+            .cloned()
             .collect()
     });
     
@@ -309,17 +261,17 @@ fn get_user() -> Option<User> {
 // Admin functions (for development)
 #[query]
 fn get_total_tickets() -> u64 {
-    TICKETS.with(|tickets| tickets.borrow().len())
+    TICKETS.with(|tickets| tickets.borrow().len() as u64)
 }
 
 #[query]
 fn get_total_avatars() -> u64 {
-    AVATARS.with(|avatars| avatars.borrow().len())
+    AVATARS.with(|avatars| avatars.borrow().len() as u64)
 }
 
 #[query]
 fn get_total_vr_worlds() -> u64 {
-    VR_WORLDS.with(|worlds| worlds.borrow().len())
+    VR_WORLDS.with(|worlds| worlds.borrow().len() as u64)
 }
 
 // Export candid interface
