@@ -1,15 +1,15 @@
-
 {
   "version": 1,
   "canisters": {
     "icp_vr_genesis_backend": {
-      "type": "rust",
-      "package": "icp_vr_genesis_backend",
-      "candid": "backend/icp_vr_genesis_backend.did"
+      "type": "custom",
+      "candid": "icp_vr_genesis_backend/icp_vr_genesis_backend.did",
+      "wasm": "icp_vr_genesis_backend/target/wasm32-unknown-unknown/release/icp_vr_genesis_backend.wasm",
+      "build": "cd icp_vr_genesis_backend && cargo build --target wasm32-unknown-unknown --release"
     },
     "icp_vr_genesis_frontend": {
       "type": "assets",
-      "source": ["dist/"]
+      "source": ["dist"]
     }
   },
   "defaults": {

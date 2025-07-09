@@ -1,0 +1,1 @@
+/mnt/c/Users/neosh/Desktop/NEW-2/virtual-icp-genesis-realm/icp_vr_genesis_backend/target/wasm32-unknown-unknown/debug/icp_vr_genesis_backend.wasm: /mnt/c/Users/neosh/Desktop/NEW-2/virtual-icp-genesis-realm/icp_vr_genesis_backend/src/lib.rs
