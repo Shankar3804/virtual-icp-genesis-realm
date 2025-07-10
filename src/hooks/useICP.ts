@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AuthClient } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
-import { Avatar, Ticket } from '../types/icp';
+import { Avatar, Ticket, VRWorld } from '../types/icp';
 
 export const useICP = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -10,6 +10,7 @@ export const useICP = () => {
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [allVRWorlds, setAllVRWorlds] = useState<VRWorld[]>([]);
   const [authClient, setAuthClient] = useState<AuthClient | null>(null);
 
   useEffect(() => {
@@ -61,8 +62,10 @@ export const useICP = () => {
 
       return new Promise((resolve) => {
         authClient.login({
-          identityProvider: 'https://identity.ic0.app',
-          maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 7 days in nanoseconds
+          identityProvider: process.env.NODE_ENV === 'production' 
+            ? 'https://identity.ic0.app'
+            : 'http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai',
+          maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
           windowOpenerFeatures: 'toolbar=0,location=0,menubar=0,width=500,height=500,left=' + 
             (screen.width / 2 - 250) + ',top=' + (screen.height / 2 - 250),
           onSuccess: async () => {
@@ -108,6 +111,7 @@ export const useICP = () => {
       setPrincipal(null);
       setAvatar(null);
       setTickets([]);
+      setAllVRWorlds([]);
       console.log('Logout successful');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -134,6 +138,37 @@ export const useICP = () => {
       console.log('User data loaded successfully');
     } catch (error) {
       console.error('Failed to load user data:', error);
+    }
+  };
+
+  const loadAllVRWorlds = async () => {
+    try {
+      console.log('Loading all VR worlds...');
+      // Simulate loading VR worlds
+      const mockWorlds: VRWorld[] = [
+        {
+          id: 'world-1',
+          name: 'Cyber City',
+          description: 'A futuristic cyberpunk city experience',
+          creator: 'demo-principal',
+          createdAt: BigInt(Date.now() - 1000000),
+          isActive: true,
+          participants: ['demo-principal']
+        },
+        {
+          id: 'world-2',
+          name: 'Space Station',
+          description: 'Explore the vastness of space',
+          creator: 'demo-principal-2',
+          createdAt: BigInt(Date.now() - 2000000),
+          isActive: true,
+          participants: ['demo-principal-2']
+        }
+      ];
+      setAllVRWorlds(mockWorlds);
+      console.log('VR worlds loaded successfully');
+    } catch (error) {
+      console.error('Failed to load VR worlds:', error);
     }
   };
 
@@ -179,14 +214,14 @@ export const useICP = () => {
     }
   };
 
-  const joinWorld = async (): Promise<boolean> => {
+  const joinVRWorld = async (worldId: string): Promise<boolean> => {
     if (!isAuthenticated) {
       console.error('User not authenticated');
       return false;
     }
     
     try {
-      console.log('Joining VR world...');
+      console.log('Joining VR world:', worldId);
       // Simulate world joining logic
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('Successfully joined VR world');
@@ -197,16 +232,23 @@ export const useICP = () => {
     }
   };
 
+  const joinWorld = async (): Promise<boolean> => {
+    return joinVRWorld('default-world');
+  };
+
   return {
     isAuthenticated,
     loading,
     principal,
     avatar,
     tickets,
+    allVRWorlds,
     login,
     logout,
     createAvatar,
     mintTicket,
-    joinWorld
+    joinWorld,
+    joinVRWorld,
+    loadAllVRWorlds
   };
 };

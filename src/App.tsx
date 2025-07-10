@@ -2,7 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Index from './pages/Index';
+import VRDashboard from './pages/VRDashboard';
 
 const queryClient = new QueryClient();
 
@@ -11,7 +11,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<VRDashboard />} />
         </Routes>
       </Router>
     </QueryClientProvider>

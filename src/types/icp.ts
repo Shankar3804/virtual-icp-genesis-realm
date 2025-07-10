@@ -18,6 +18,17 @@ export interface Ticket {
 export interface VRWorld {
   id: string;
   name: string;
-  userCount: number;
+  description: string;
+  creator: string;
+  createdAt: bigint;
   isActive: boolean;
+  participants: string[];
+}
+
+export interface User {
+  id: string;
+  avatar?: Avatar;
+  tickets: Ticket[];
+  vrWorlds: VRWorld[];
+  createdAt: bigint;
 }
