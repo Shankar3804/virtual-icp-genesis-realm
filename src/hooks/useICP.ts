@@ -35,8 +35,8 @@ export const useICP = () => {
     } catch (error) {
       console.error('Auth initialization failed:', error);
       toast({
-        title: "Authentication Error",
-        description: "Failed to initialize authentication",
+        title: "Connection Error",
+        description: "Failed to connect to Internet Computer. Please try refreshing the page.",
         variant: "destructive",
       });
     } finally {
@@ -47,9 +47,10 @@ export const useICP = () => {
   const login = async (): Promise<boolean> => {
     setLoading(true);
     try {
-      console.log('Attempting to login...');
+      console.log('Attempting to login with Internet Identity...');
       const success = await icpService.login();
-      console.log('Login success:', success);
+      console.log('Login result:', success);
+      
       if (success) {
         setIsAuthenticated(true);
         const userPrincipal = await icpService.getPrincipal();
@@ -57,16 +58,22 @@ export const useICP = () => {
         await loadUserData();
         toast({
           title: "Welcome to ICP VR Genesis!",
-          description: "Successfully logged in with Internet Identity",
+          description: "Successfully connected with Internet Identity",
         });
         return true;
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: "Unable to connect with Internet Identity. Please try again.",
+          variant: "destructive",
+        });
+        return false;
       }
-      return false;
     } catch (error) {
       console.error('Login failed:', error);
       toast({
-        title: "Login Failed",
-        description: "Unable to authenticate with Internet Identity",
+        title: "Connection Error",
+        description: "Internet Identity connection failed. Please check your internet connection and try again.",
         variant: "destructive",
       });
       return false;

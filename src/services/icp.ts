@@ -4,9 +4,22 @@ import { Principal } from '@dfinity/principal';
 
 // This will be replaced with actual canister IDs after deployment
 const BACKEND_CANISTER_ID = import.meta.env.VITE_BACKEND_CANISTER_ID || 'rrkah-fqaaa-aaaaa-aaaaq-cai';
-const II_URL = import.meta.env.NODE_ENV === 'production' 
-  ? 'https://identity.ic0.app'
-  : `http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai`;
+
+// Fix Internet Identity URL configuration
+const getInternetIdentityUrl = () => {
+  if (import.meta.env.NODE_ENV === 'production') {
+    return 'https://identity.ic0.app';
+  }
+  // For local development, use the correct local Internet Identity URL
+  return 'http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai';
+};
+
+const getHostUrl = () => {
+  if (import.meta.env.NODE_ENV === 'production') {
+    return 'https://ic0.app';
+  }
+  return 'http://localhost:4943';
+};
 
 export class ICPService {
   private authClient: AuthClient | null = null;
@@ -15,44 +28,64 @@ export class ICPService {
 
   async init() {
     try {
+      console.log('Initializing ICP Service...');
       this.authClient = await AuthClient.create({
         idleOptions: {
           disableIdle: true,
           disableDefaultIdleCallback: true,
         },
       });
+      console.log('AuthClient created successfully');
 
       if (await this.authClient.isAuthenticated()) {
+        console.log('User is already authenticated');
         await this.setupActor();
+      } else {
+        console.log('User is not authenticated');
       }
     } catch (error) {
       console.error('ICP Service initialization failed:', error);
+      throw error;
     }
   }
 
   async login(): Promise<boolean> {
-    if (!this.authClient) {
-      await this.init();
-    }
+    try {
+      console.log('Starting login process...');
+      
+      if (!this.authClient) {
+        console.log('AuthClient not initialized, initializing now...');
+        await this.init();
+      }
 
-    return new Promise((resolve) => {
-      this.authClient!.login({
-        identityProvider: II_URL,
-        onSuccess: async () => {
-          try {
-            await this.setupActor();
-            resolve(true);
-          } catch (error) {
-            console.error('Setup actor failed:', error);
+      const identityUrl = getInternetIdentityUrl();
+      console.log('Using Internet Identity URL:', identityUrl);
+
+      return new Promise((resolve) => {
+        this.authClient!.login({
+          identityProvider: identityUrl,
+          windowOpenerFeatures: 'toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100',
+          onSuccess: async () => {
+            try {
+              console.log('Login successful, setting up actor...');
+              await this.setupActor();
+              console.log('Actor setup complete');
+              resolve(true);
+            } catch (error) {
+              console.error('Setup actor failed after login:', error);
+              resolve(false);
+            }
+          },
+          onError: (error: any) => {
+            console.error('Login failed with error:', error);
             resolve(false);
-          }
-        },
-        onError: (error: any) => {
-          console.error('Login failed:', error);
-          resolve(false);
-        },
+          },
+        });
       });
-    });
+    } catch (error) {
+      console.error('Login process failed:', error);
+      return false;
+    }
   }
 
   async logout() {
@@ -83,17 +116,26 @@ export class ICPService {
 
   private async setupActor() {
     try {
+      console.log('Setting up actor...');
       const identity = this.authClient!.getIdentity();
+      console.log('Got identity:', identity.getPrincipal().toString());
       
+      const hostUrl = getHostUrl();
+      console.log('Using host URL:', hostUrl);
+
       this.agent = new HttpAgent({
         identity,
-        host: import.meta.env.NODE_ENV === 'production' ? 'https://ic0.app' : 'http://localhost:4943',
+        host: hostUrl,
       });
 
       if (import.meta.env.NODE_ENV !== 'production') {
-        await this.agent.fetchRootKey().catch(err => {
+        console.log('Fetching root key for local development...');
+        try {
+          await this.agent.fetchRootKey();
+          console.log('Root key fetched successfully');
+        } catch (err) {
           console.warn('Failed to fetch root key:', err);
-        });
+        }
       }
 
       // Mock IDL for development - this will be replaced with actual generated declarations
@@ -144,6 +186,7 @@ export class ICPService {
       });
     } catch (error) {
       console.error('Actor setup failed:', error);
+      throw error;
     }
   }
 
