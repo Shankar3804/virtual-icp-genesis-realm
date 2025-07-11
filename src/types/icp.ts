@@ -1,19 +1,9 @@
 
-export interface User {
-  id: string;
-  principal: string;
-  avatar?: Avatar;
-  tickets: Ticket[];
-  vrWorlds: VRWorld[];
-  createdAt: bigint;
-}
-
 export interface Avatar {
   id: string;
   name: string;
   color: string;
   accessory: string;
-  owner: string;
 }
 
 export interface Ticket {
@@ -21,8 +11,8 @@ export interface Ticket {
   eventName: string;
   eventDate: bigint;
   ticketType: string;
-  owner: string;
   isUsed: boolean;
+  owner: string;
 }
 
 export interface VRWorld {
@@ -35,15 +25,10 @@ export interface VRWorld {
   participants: string[];
 }
 
-export interface VRPosition {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface VRUser {
-  principal: string;
+export interface User {
+  id: string;
   avatar?: Avatar;
-  position: VRPosition;
-  rotation: VRPosition;
+  tickets: Ticket[];
+  vrWorlds: VRWorld[];
+  createdAt: bigint;
 }

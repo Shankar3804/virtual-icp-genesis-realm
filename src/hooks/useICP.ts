@@ -1,255 +1,254 @@
+
 import { useState, useEffect } from 'react';
+import { AuthClient } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
-import { icpService } from '../services/icp';
 import { Avatar, Ticket, VRWorld } from '../types/icp';
-import { useToast } from './use-toast';
 
 export const useICP = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [vrWorlds, setVRWorlds] = useState<VRWorld[]>([]);
   const [allVRWorlds, setAllVRWorlds] = useState<VRWorld[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [authClient, setAuthClient] = useState<AuthClient | null>(null);
 
   useEffect(() => {
-    initAuth();
+    initializeAuth();
   }, []);
 
-  const initAuth = async () => {
+  const initializeAuth = async () => {
     try {
-      console.log('Initializing ICP authentication...');
-      await icpService.init();
-      const authenticated = await icpService.isAuthenticated();
-      console.log('Authentication status:', authenticated);
-      setIsAuthenticated(authenticated);
+      console.log('Initializing auth client...');
+      const client = await AuthClient.create({
+        idleOptions: {
+          disableIdle: true,
+          disableDefaultIdleCallback: true
+        }
+      });
       
-      if (authenticated) {
-        const userPrincipal = await icpService.getPrincipal();
-        console.log('User principal:', userPrincipal?.toString());
-        setPrincipal(userPrincipal);
-        await loadUserData();
+      setAuthClient(client);
+      
+      const isAuth = await client.isAuthenticated();
+      console.log('Authentication status:', isAuth);
+      
+      if (isAuth) {
+        const identity = client.getIdentity();
+        const principalId = identity.getPrincipal();
+        console.log('Authenticated with principal:', principalId.toString());
+        
+        setIsAuthenticated(true);
+        setPrincipal(principalId);
+        
+        // Load user data
+        await loadUserData(principalId);
       }
     } catch (error) {
       console.error('Auth initialization failed:', error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to initialize authentication",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (): Promise<boolean> => {
-    setLoading(true);
+    if (!authClient) {
+      console.error('Auth client not initialized');
+      return false;
+    }
+
     try {
-      console.log('Attempting to login...');
-      const success = await icpService.login();
-      console.log('Login success:', success);
-      if (success) {
-        setIsAuthenticated(true);
-        const userPrincipal = await icpService.getPrincipal();
-        setPrincipal(userPrincipal);
-        await loadUserData();
-        toast({
-          title: "Welcome to ICP VR Genesis!",
-          description: "Successfully logged in with Internet Identity",
+      console.log('Starting login process...');
+      setLoading(true);
+
+      return new Promise((resolve) => {
+        authClient.login({
+          identityProvider: process.env.NODE_ENV === 'production' 
+            ? 'https://identity.ic0.app'
+            : 'http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai',
+          maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
+          windowOpenerFeatures: 'toolbar=0,location=0,menubar=0,width=500,height=500,left=' + 
+            (screen.width / 2 - 250) + ',top=' + (screen.height / 2 - 250),
+          onSuccess: async () => {
+            console.log('Login successful');
+            try {
+              const identity = authClient.getIdentity();
+              const principalId = identity.getPrincipal();
+              
+              console.log('Login success with principal:', principalId.toString());
+              
+              setIsAuthenticated(true);
+              setPrincipal(principalId);
+              
+              await loadUserData(principalId);
+              resolve(true);
+            } catch (error) {
+              console.error('Post-login processing failed:', error);
+              resolve(false);
+            } finally {
+              setLoading(false);
+            }
+          },
+          onError: (error) => {
+            console.error('Login failed:', error);
+            setLoading(false);
+            resolve(false);
+          }
         });
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Login failed:', error);
-      toast({
-        title: "Login Failed",
-        description: "Unable to authenticate with Internet Identity",
-        variant: "destructive",
       });
-      return false;
-    } finally {
+    } catch (error) {
+      console.error('Login process failed:', error);
       setLoading(false);
+      return false;
     }
   };
 
   const logout = async () => {
+    if (!authClient) return;
+    
     try {
-      await icpService.logout();
+      await authClient.logout();
       setIsAuthenticated(false);
       setPrincipal(null);
       setAvatar(null);
       setTickets([]);
-      setVRWorlds([]);
       setAllVRWorlds([]);
-      toast({
-        title: "Logged Out",
-        description: "Successfully logged out from ICP VR Genesis",
-      });
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
 
-  const loadUserData = async () => {
+  const loadUserData = async (userPrincipal: Principal) => {
     try {
-      console.log('Loading user data...');
-      const [userAvatar, userTickets, userVRWorlds, allWorlds] = await Promise.all([
-        icpService.getAvatar(),
-        icpService.getTickets(),
-        icpService.getUserVRWorlds(),
-        icpService.getAllVRWorlds(),
-      ]);
+      console.log('Loading user data for:', userPrincipal.toString());
       
-      console.log('User avatar:', userAvatar);
-      console.log('User tickets:', userTickets);
-      console.log('User VR worlds:', userVRWorlds);
-      console.log('All VR worlds:', allWorlds);
+      // Simulate loading avatar data
+      const mockAvatar: Avatar = {
+        id: userPrincipal.toString(),
+        name: 'VR User',
+        color: '#00ffff',
+        accessory: 'none'
+      };
+      setAvatar(mockAvatar);
       
-      setAvatar(userAvatar[0] || null);
-      setTickets(userTickets);
-      setVRWorlds(userVRWorlds);
-      setAllVRWorlds(allWorlds);
+      // Simulate loading tickets
+      const mockTickets: Ticket[] = [];
+      setTickets(mockTickets);
+      
+      console.log('User data loaded successfully');
     } catch (error) {
       console.error('Failed to load user data:', error);
     }
   };
 
+  const loadAllVRWorlds = async () => {
+    try {
+      console.log('Loading all VR worlds...');
+      // Simulate loading VR worlds
+      const mockWorlds: VRWorld[] = [
+        {
+          id: 'world-1',
+          name: 'Cyber City',
+          description: 'A futuristic cyberpunk city experience',
+          creator: 'demo-principal',
+          createdAt: BigInt(Date.now() - 1000000),
+          isActive: true,
+          participants: ['demo-principal']
+        },
+        {
+          id: 'world-2',
+          name: 'Space Station',
+          description: 'Explore the vastness of space',
+          creator: 'demo-principal-2',
+          createdAt: BigInt(Date.now() - 2000000),
+          isActive: true,
+          participants: ['demo-principal-2']
+        }
+      ];
+      setAllVRWorlds(mockWorlds);
+      console.log('VR worlds loaded successfully');
+    } catch (error) {
+      console.error('Failed to load VR worlds:', error);
+    }
+  };
+
   const createAvatar = async (name: string, color: string, accessory: string) => {
+    if (!principal) return;
+    
     try {
       console.log('Creating avatar:', { name, color, accessory });
-      const result = await icpService.createAvatar(name, color, accessory);
-      console.log('Avatar creation result:', result);
-      if (result[0]) {
-        setAvatar(result[0]);
-        toast({
-          title: "Avatar Created!",
-          description: `Welcome to the metaverse, ${name}!`,
-        });
-        return result[0];
-      }
+      
+      const newAvatar: Avatar = {
+        id: principal.toString(),
+        name,
+        color,
+        accessory
+      };
+      
+      setAvatar(newAvatar);
+      console.log('Avatar created successfully');
     } catch (error) {
       console.error('Avatar creation failed:', error);
-      toast({
-        title: "Avatar Creation Failed",
-        description: "Unable to create your avatar",
-        variant: "destructive",
-      });
     }
-    return null;
   };
 
   const mintTicket = async (eventName: string, eventDate: bigint, ticketType: string) => {
+    if (!principal) return;
+    
     try {
       console.log('Minting ticket:', { eventName, eventDate, ticketType });
-      const result = await icpService.mintTicket(eventName, eventDate, ticketType);
-      console.log('Ticket minting result:', result);
-      if (result[0]) {
-        setTickets(prev => [...prev, result[0]]);
-        toast({
-          title: "Ticket Minted!",
-          description: `Successfully minted ticket for ${eventName}`,
-        });
-        return result[0];
-      }
+      
+      const newTicket: Ticket = {
+        id: Date.now().toString(),
+        eventName,
+        eventDate,
+        ticketType,
+        isUsed: false,
+        owner: principal.toString()
+      };
+      
+      setTickets(prev => [...prev, newTicket]);
+      console.log('Ticket minted successfully');
     } catch (error) {
       console.error('Ticket minting failed:', error);
-      toast({
-        title: "Ticket Minting Failed",
-        description: "Unable to mint your ticket",
-        variant: "destructive",
-      });
     }
-    return null;
   };
 
-  const createVRWorld = async (name: string, description: string) => {
-    try {
-      console.log('Creating VR world:', { name, description });
-      const result = await icpService.createVRWorld(name, description);
-      console.log('VR world creation result:', result);
-      if (result[0]) {
-        const newWorld = result[0];
-        setVRWorlds(prev => [...prev, newWorld]);
-        setAllVRWorlds(prev => [...prev, newWorld]); // Add to both arrays
-        toast({
-          title: "VR World Created!",
-          description: `Successfully created ${name}`,
-        });
-        return newWorld;
-      }
-    } catch (error) {
-      console.error('VR world creation failed:', error);
-      toast({
-        title: "VR World Creation Failed",
-        description: "Unable to create your VR world",
-        variant: "destructive",
-      });
+  const joinVRWorld = async (worldId: string): Promise<boolean> => {
+    if (!isAuthenticated) {
+      console.error('User not authenticated');
+      return false;
     }
-    return null;
-  };
-
-  const joinVRWorld = async (worldId: string) => {
+    
     try {
       console.log('Joining VR world:', worldId);
-      const success = await icpService.joinVRWorld(worldId);
-      console.log('Join VR world result:', success);
-      if (success) {
-        // Refresh all VR worlds to get updated participant lists
-        await loadAllVRWorlds();
-        // Also refresh user's VR worlds in case they now have access
-        await loadUserData();
-        toast({
-          title: "Joined VR World!",
-          description: "Successfully joined the VR world",
-        });
-        return true;
-      } else {
-        toast({
-          title: "Join Failed",
-          description: "Unable to join the VR world",
-          variant: "destructive",
-        });
-        return false;
-      }
+      // Simulate world joining logic
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Successfully joined VR world');
+      return true;
     } catch (error) {
-      console.error('Join VR world failed:', error);
-      toast({
-        title: "Join VR World Failed",
-        description: "Unable to join the VR world",
-        variant: "destructive",
-      });
+      console.error('Failed to join world:', error);
       return false;
     }
   };
 
-  const loadAllVRWorlds = async () => {
-    try {
-      const allWorlds = await icpService.getAllVRWorlds();
-      console.log('Loaded all VR worlds:', allWorlds);
-      setAllVRWorlds(allWorlds);
-    } catch (error) {
-      console.error('Failed to load all VR worlds:', error);
-    }
+  const joinWorld = async (): Promise<boolean> => {
+    return joinVRWorld('default-world');
   };
 
   return {
     isAuthenticated,
+    loading,
     principal,
     avatar,
     tickets,
-    vrWorlds,
     allVRWorlds,
-    loading,
     login,
     logout,
     createAvatar,
     mintTicket,
-    createVRWorld,
+    joinWorld,
     joinVRWorld,
-    loadUserData,
-    loadAllVRWorlds,
+    loadAllVRWorlds
   };
 };

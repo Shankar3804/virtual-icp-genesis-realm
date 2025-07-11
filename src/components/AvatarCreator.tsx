@@ -2,113 +2,69 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useICP } from '../hooks/useICP';
 
-const AvatarCreator: React.FC = () => {
+const AvatarCreator = () => {
   const [name, setName] = useState('');
   const [color, setColor] = useState('#00ffff');
   const [accessory, setAccessory] = useState('none');
-  const [creating, setCreating] = useState(false);
-  
   const { createAvatar, avatar } = useICP();
 
-  const handleCreateAvatar = async () => {
-    if (!name.trim()) return;
-    
-    setCreating(true);
-    await createAvatar(name, color, accessory);
-    setCreating(false);
+  const handleCreate = async () => {
+    if (name.trim()) {
+      await createAvatar(name, color, accessory);
+    }
   };
 
   if (avatar) {
     return (
-      <Card className="holographic">
-        <CardHeader>
-          <CardTitle className="text-primary neon-text">Your Avatar</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <div 
-              className="w-16 h-16 rounded-full border-2 border-primary pulse-neon"
-              style={{ backgroundColor: avatar.color }}
-            />
-            <div>
-              <h3 className="font-semibold text-foreground">{avatar.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                Accessory: {avatar.accessory}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="text-center">
+          <div 
+            className="w-20 h-20 rounded-full mx-auto mb-2 cyber-glow"
+            style={{ backgroundColor: avatar.color }}
+          />
+          <h3 className="font-semibold">{avatar.name}</h3>
+          <p className="text-sm text-muted-foreground">Avatar created!</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="holographic">
-      <CardHeader>
-        <CardTitle className="text-primary neon-text">Create Your Avatar</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="avatar-name">Avatar Name</Label>
-          <Input
-            id="avatar-name"
-            placeholder="Enter your avatar name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="bg-input border-border"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="avatar-color">Avatar Color</Label>
-          <div className="flex items-center space-x-2">
-            <input
-              type="color"
-              id="avatar-color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="w-12 h-10 rounded border border-border cursor-pointer"
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">Avatar Name</label>
+        <Input 
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter avatar name"
+          className="holographic"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-2">Color</label>
+        <div className="flex space-x-2">
+          {['#00ffff', '#ff00ff', '#ffff00', '#00ff00'].map((col) => (
+            <button
+              key={col}
+              className={`w-8 h-8 rounded-full border-2 ${color === col ? 'border-white' : 'border-gray-400'}`}
+              style={{ backgroundColor: col }}
+              onClick={() => setColor(col)}
             />
-            <span className="text-sm text-muted-foreground">{color}</span>
-          </div>
+          ))}
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="avatar-accessory">Accessory</Label>
-          <Select value={accessory} onValueChange={setAccessory}>
-            <SelectTrigger className="bg-input border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="hat">VR Headset</SelectItem>
-              <SelectItem value="glasses">Cyber Glasses</SelectItem>
-              <SelectItem value="mask">Neon Mask</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Button 
-          onClick={handleCreateAvatar}
-          disabled={!name.trim() || creating}
-          className="w-full cyber-glow bg-primary hover:bg-primary/80"
-        >
-          {creating ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-              Creating Avatar...
-            </>
-          ) : (
-            'Create Avatar'
-          )}
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+
+      <Button 
+        onClick={handleCreate}
+        className="w-full cyber-glow"
+        disabled={!name.trim()}
+      >
+        Create Avatar
+      </Button>
+    </div>
   );
 };
 
