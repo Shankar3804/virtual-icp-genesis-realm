@@ -2,23 +2,16 @@ import { AuthClient } from '@dfinity/auth-client';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 
-// This will be replaced with actual canister IDs after deployment
-const BACKEND_CANISTER_ID = import.meta.env.VITE_BACKEND_CANISTER_ID || 'rrkah-fqaaa-aaaaa-aaaaq-cai';
+// Use mainnet canister IDs - these are example IDs, replace with your actual deployed canisters
+const BACKEND_CANISTER_ID = 'rdmx6-jaaaa-aaaaa-aaadq-cai'; // Replace with your actual backend canister ID
 
-// Fix Internet Identity URL configuration
+// Always use production Internet Identity and IC network
 const getInternetIdentityUrl = () => {
-  if (import.meta.env.NODE_ENV === 'production') {
-    return 'https://identity.ic0.app';
-  }
-  // For local development, use the correct local Internet Identity URL
-  return 'http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai';
+  return 'https://identity.ic0.app';
 };
 
 const getHostUrl = () => {
-  if (import.meta.env.NODE_ENV === 'production') {
-    return 'https://ic0.app';
-  }
-  return 'http://localhost:4943';
+  return 'https://ic0.app';
 };
 
 export class ICPService {
@@ -28,7 +21,7 @@ export class ICPService {
 
   async init() {
     try {
-      console.log('Initializing ICP Service...');
+      console.log('Initializing ICP Service for mainnet...');
       this.authClient = await AuthClient.create({
         idleOptions: {
           disableIdle: true,
@@ -51,7 +44,7 @@ export class ICPService {
 
   async login(): Promise<boolean> {
     try {
-      console.log('Starting login process...');
+      console.log('Starting login process with mainnet...');
       
       if (!this.authClient) {
         console.log('AuthClient not initialized, initializing now...');
@@ -64,6 +57,7 @@ export class ICPService {
       return new Promise((resolve) => {
         this.authClient!.login({
           identityProvider: identityUrl,
+          maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 7 days
           windowOpenerFeatures: 'toolbar=0,location=0,menubar=0,width=500,height=500,left=100,top=100',
           onSuccess: async () => {
             try {
@@ -116,7 +110,7 @@ export class ICPService {
 
   private async setupActor() {
     try {
-      console.log('Setting up actor...');
+      console.log('Setting up actor for mainnet...');
       const identity = this.authClient!.getIdentity();
       console.log('Got identity:', identity.getPrincipal().toString());
       
@@ -128,15 +122,8 @@ export class ICPService {
         host: hostUrl,
       });
 
-      if (import.meta.env.NODE_ENV !== 'production') {
-        console.log('Fetching root key for local development...');
-        try {
-          await this.agent.fetchRootKey();
-          console.log('Root key fetched successfully');
-        } catch (err) {
-          console.warn('Failed to fetch root key:', err);
-        }
-      }
+      // No need to fetch root key for mainnet
+      console.log('Using mainnet - skipping root key fetch');
 
       // Mock IDL for development - this will be replaced with actual generated declarations
       const idlFactory = ({ IDL }: any) => {

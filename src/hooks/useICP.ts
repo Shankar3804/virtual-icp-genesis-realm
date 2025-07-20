@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AuthClient } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
@@ -19,7 +18,7 @@ export const useICP = () => {
 
   const initializeAuth = async () => {
     try {
-      console.log('Initializing auth client...');
+      console.log('Initializing auth client for mainnet...');
       const client = await AuthClient.create({
         idleOptions: {
           disableIdle: true,
@@ -57,14 +56,12 @@ export const useICP = () => {
     }
 
     try {
-      console.log('Starting login process...');
+      console.log('Starting login process for mainnet...');
       setLoading(true);
 
       return new Promise((resolve) => {
         authClient.login({
-          identityProvider: process.env.NODE_ENV === 'production' 
-            ? 'https://identity.ic0.app'
-            : 'http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai',
+          identityProvider: 'https://identity.ic0.app',
           maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
           windowOpenerFeatures: 'toolbar=0,location=0,menubar=0,width=500,height=500,left=' + 
             (screen.width / 2 - 250) + ',top=' + (screen.height / 2 - 250),
