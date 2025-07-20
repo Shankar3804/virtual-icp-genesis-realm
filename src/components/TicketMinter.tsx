@@ -2,62 +2,86 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useICP } from '../hooks/useICP';
+import { useToast } from '@/hooks/use-toast';
 
 const TicketMinter = () => {
   const [eventName, setEventName] = useState('');
-  const [ticketType, setTicketType] = useState('VIP');
-  const { mintTicket, tickets } = useICP();
+  const [eventDate, setEventDate] = useState('');
+  const [ticketType, setTicketType] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const { mintTicket } = useICP();
+  const { toast } = useToast();
 
-  const handleMint = async () => {
-    if (eventName.trim()) {
-      const eventDate = BigInt(Date.now() + 7 * 24 * 60 * 60 * 1000); // 1 week from now
-      await mintTicket(eventName, eventDate, ticketType);
+  const handleMint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventName || !eventDate || !ticketType) return;
+
+    setLoading(true);
+    try {
+      const eventDateBigInt = BigInt(new Date(eventDate).getTime());
+      await mintTicket(eventName, eventDateBigInt, ticketType);
+      
+      toast({
+        title: "Ticket Minted!",
+        description: `Successfully minted ${ticketType} ticket for ${eventName}`,
+      });
+      
       setEventName('');
+      setEventDate('');
+      setTicketType('');
+    } catch (error) {
+      toast({
+        title: "Minting Failed",
+        description: "Failed to mint ticket. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-2">Event Name</label>
-        <Input 
+    <form onSubmit={handleMint} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="eventName">Event Name</Label>
+        <Input
+          id="eventName"
           value={eventName}
           onChange={(e) => setEventName(e.target.value)}
           placeholder="Enter event name"
-          className="holographic"
+          required
         />
       </div>
       
-      <div>
-        <label className="block text-sm font-medium mb-2">Ticket Type</label>
-        <select 
+      <div className="space-y-2">
+        <Label htmlFor="eventDate">Event Date</Label>
+        <Input
+          id="eventDate"
+          type="datetime-local"
+          value={eventDate}
+          onChange={(e) => setEventDate(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="ticketType">Ticket Type</Label>
+        <Input
+          id="ticketType"
           value={ticketType}
           onChange={(e) => setTicketType(e.target.value)}
-          className="w-full p-2 rounded border holographic bg-background"
-        >
-          <option value="VIP">VIP</option>
-          <option value="General">General</option>
-          <option value="Premium">Premium</option>
-        </select>
+          placeholder="VIP, General, Early Bird, etc."
+          required
+        />
       </div>
-
-      <Button 
-        onClick={handleMint}
-        className="w-full cyber-glow"
-        disabled={!eventName.trim()}
-      >
-        Mint Ticket
+      
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? 'Minting...' : 'Mint Ticket NFT'}
       </Button>
-
-      {tickets.length > 0 && (
-        <div className="mt-4">
-          <p className="text-sm text-muted-foreground">
-            You have {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-      )}
-    </div>
+    </form>
   );
 };
 

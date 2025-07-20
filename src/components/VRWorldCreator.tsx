@@ -2,56 +2,72 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const VRWorldCreator = () => {
-  const [name, setName] = useState('');
+  const [worldName, setWorldName] = useState('');
   const [description, setDescription] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const { toast } = useToast();
 
-  const handleCreate = async () => {
-    if (name.trim() && description.trim()) {
-      setIsCreating(true);
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!worldName || !description) return;
+
+    setLoading(true);
+    try {
       // Simulate world creation
       await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('VR World created:', { name, description });
-      setName('');
+      
+      toast({
+        title: "VR World Created!",
+        description: `Successfully created "${worldName}" virtual world`,
+      });
+      
+      setWorldName('');
       setDescription('');
-      setIsCreating(false);
+    } catch (error) {
+      toast({
+        title: "Creation Failed",
+        description: "Failed to create VR world. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-2">World Name</label>
-        <Input 
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+    <form onSubmit={handleCreate} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="worldName">World Name</Label>
+        <Input
+          id="worldName"
+          value={worldName}
+          onChange={(e) => setWorldName(e.target.value)}
           placeholder="Enter world name"
-          className="holographic"
+          required
         />
       </div>
       
-      <div>
-        <label className="block text-sm font-medium mb-2">Description</label>
-        <Textarea 
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe your VR world"
-          className="holographic"
-          rows={3}
+          placeholder="Describe your virtual world..."
+          required
         />
       </div>
-
-      <Button 
-        onClick={handleCreate}
-        className="w-full cyber-glow"
-        disabled={!name.trim() || !description.trim() || isCreating}
-      >
-        {isCreating ? 'Creating...' : 'Create VR World'}
+      
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? 'Creating World...' : 'Create VR World'}
       </Button>
-    </div>
+    </form>
   );
 };
 
