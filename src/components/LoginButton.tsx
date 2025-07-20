@@ -1,19 +1,26 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useICP } from '../hooks/useICP';
 
 const LoginButton = () => {
-  const handleLogin = () => {
-    console.log('Login button clicked');
-    // TODO: Implement Internet Identity login
-  };
+  const { isAuthenticated, login, logout, loading } = useICP();
+
+  if (loading) {
+    return (
+      <Button disabled className="holographic">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+        Loading...
+      </Button>
+    );
+  }
 
   return (
-    <Button 
-      onClick={handleLogin}
-      className="cyber-glow"
+    <Button
+      onClick={isAuthenticated ? logout : login}
+      className={isAuthenticated ? "bg-destructive hover:bg-destructive/80" : "cyber-glow bg-primary hover:bg-primary/80"}
     >
-      Connect with Internet Identity
+      {isAuthenticated ? "Logout" : "Login with Internet Identity"}
     </Button>
   );
 };
