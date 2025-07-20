@@ -26,9 +26,8 @@ export interface VRWorld {
 }
 
 export interface User {
-  id: string;
+  principal: string;
   avatar?: Avatar;
   tickets: Ticket[];
-  vrWorlds: VRWorld[];
-  createdAt: bigint;
+  createdWorlds: string[];
 }

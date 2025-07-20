@@ -18,14 +18,12 @@ const AvatarCreator = () => {
 
   if (avatar) {
     return (
-      <div className="space-y-4">
-        <div className="text-center">
-          <div 
-            className="w-20 h-20 rounded-full mx-auto mb-2 cyber-glow"
-            style={{ backgroundColor: avatar.color }}
-          />
-          <h3 className="font-semibold">{avatar.name}</h3>
-          <p className="text-sm text-muted-foreground">Avatar created!</p>
+      <div className="text-center">
+        <p className="text-green-400 mb-4">Avatar created successfully!</p>
+        <div className="space-y-2">
+          <p><strong>Name:</strong> {avatar.name}</p>
+          <p><strong>Color:</strong> {avatar.color}</p>
+          <p><strong>Accessory:</strong> {avatar.accessory}</p>
         </div>
       </div>
     );
@@ -38,23 +36,33 @@ const AvatarCreator = () => {
         <Input 
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter avatar name"
+          placeholder="Enter your avatar name"
           className="holographic"
         />
       </div>
       
       <div>
         <label className="block text-sm font-medium mb-2">Color</label>
-        <div className="flex space-x-2">
-          {['#00ffff', '#ff00ff', '#ffff00', '#00ff00'].map((col) => (
-            <button
-              key={col}
-              className={`w-8 h-8 rounded-full border-2 ${color === col ? 'border-white' : 'border-gray-400'}`}
-              style={{ backgroundColor: col }}
-              onClick={() => setColor(col)}
-            />
-          ))}
-        </div>
+        <input 
+          type="color"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          className="w-full h-10 rounded border holographic"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-2">Accessory</label>
+        <select 
+          value={accessory}
+          onChange={(e) => setAccessory(e.target.value)}
+          className="w-full p-2 rounded border holographic bg-background"
+        >
+          <option value="none">None</option>
+          <option value="hat">Hat</option>
+          <option value="glasses">Glasses</option>
+          <option value="mask">Mask</option>
+        </select>
       </div>
 
       <Button 
